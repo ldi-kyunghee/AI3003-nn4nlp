@@ -7,7 +7,7 @@ import os, sys
 import torch
 import torch.nn as nn
 from torch.autograd import Variable
-from torch.nn.utils.rnn import pad_sequence
+from tqdm import tqdm
 
 # Feed-forward Neural Network Language Model
 class FNN_LM(nn.Module):
@@ -30,7 +30,6 @@ class FNN_LM(nn.Module):
 N = 2 # The length of the n-gram
 EMB_SIZE = 128 # The size of the embedding
 HID_SIZE = 128 # The size of the hidden layer
-BATCH_SIZE = 32 # The size of the batch
 
 USE_CUDA = torch.cuda.is_available()
 
@@ -75,23 +74,20 @@ def calc_score_of_histories(words):
   logits = model(words_var)
   return logits
 
-# Calculate the loss value for sentences
-def calc_sent_loss(sentences):
-  padded_sentences = pad_sequence([torch.tensor(sent) for sent in sentences], batch_first=True, padding_value=S)
-
+# Calculate the loss value for the entire sentence
+def calc_sent_loss(sent):
+  # The initial history is equal to end of sentence symbols
+  hist = [S] * N
   # Step through the sentence, including the end of sentence token
   all_histories = []
   all_targets = []
-  for sent in padded_sentences:
-    # The initial history is equal to end of sentence symbols
-    hist = [S] * N
-    for next_word in torch.cat([sent, torch.tensor([0])]):
-      all_histories.append(list(hist))
-      all_targets.append(next_word)
-      hist = hist[1:] + [next_word]
+  for next_word in sent + [S]:
+    all_histories.append(list(hist))
+    all_targets.append(next_word)
+    hist = hist[1:] + [next_word]
 
   logits = calc_score_of_histories(all_histories)
-  loss = nn.functional.cross_entropy(logits, convert_to_variable(all_targets), reduction='sum')
+  loss = nn.functional.cross_entropy(logits, convert_to_variable(all_targets), size_average=False)
 
   return loss
 
@@ -120,16 +116,15 @@ for ITER in range(5):
   model.train()
   train_words, train_loss = 0, 0.0
   start = time.time()
-  for i in range(0, len(train), BATCH_SIZE):
-    batch_sents = train[i:i+BATCH_SIZE]
-    my_loss = calc_sent_loss(batch_sents)
+  for sent_id, sent in tqdm(enumerate(train), total=len(train)):
+    my_loss = calc_sent_loss(sent)
     train_loss += my_loss.item()
-    train_words += sum([len(sent) for sent in batch_sents])
+    train_words += len(sent)
     optimizer.zero_grad()
     my_loss.backward()
     optimizer.step()
-    if i % (BATCH_SIZE*156) == 0:
-      print("--finished %r batches (word/sec=%.2f)" % (i+1, train_words/(time.time()-start)))
+    if (sent_id+1) % 5000 == 0:
+      print("--finished %r sentences (word/sec=%.2f)" % (sent_id+1, train_words/(time.time()-start)))
   print("iter %r: train loss/word=%.4f, ppl=%.4f (word/sec=%.2f)" % (ITER, train_loss/train_words, math.exp(train_loss/train_words), train_words/(time.time()-start)))
   
   # Evaluate on dev set
@@ -137,11 +132,10 @@ for ITER in range(5):
   model.eval()
   dev_words, dev_loss = 0, 0.0
   start = time.time()
-  for i in range(0, len(dev), BATCH_SIZE):
-    batch_sents = dev[i:i+BATCH_SIZE]
-    my_loss = calc_sent_loss(batch_sents)
+  for sent_id, sent in tqdm(enumerate(dev), total=len(dev)):
+    my_loss = calc_sent_loss(sent)
     dev_loss += my_loss.item()
-    dev_words += sum([len(sent) for sent in batch_sents])
+    dev_words += len(sent)
 
   # Keep track of the development accuracy and reduce the learning rate if it got worse
   if last_dev < dev_loss:

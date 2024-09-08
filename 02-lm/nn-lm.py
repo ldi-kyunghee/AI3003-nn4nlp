@@ -7,6 +7,7 @@ import os, sys
 import torch
 import torch.nn as nn
 from torch.autograd import Variable
+from tqdm import tqdm
 
 # Feed-forward Neural Network Language Model
 class FNN_LM(nn.Module):
@@ -20,9 +21,8 @@ class FNN_LM(nn.Module):
     )
 
   def forward(self, words):
-    emb = self.embedding(words)      # 3D Tensor of size [batch_size x num_hist x emb_size]
-    feat = emb.view(emb.size(0), -1) # 2D Tensor of size [batch_size x (num_hist*emb_size)]
-    logit = self.fnn(feat)           # 2D Tensor of size [batch_size x nwords]
+    emb = self.embedding(words).view(1, -1)  # 2D Tensor of size [1 x (num_hist*emb_size)])
+    logit = self.fnn(emb)                    # 2D Tensor of size [1 x nwords])
 
     return logit
 
@@ -67,28 +67,22 @@ def convert_to_variable(words):
   return var
 
 # A function to calculate scores for one value
-def calc_score_of_histories(words):
-  # This will change from a list of histories, to a pytorch Variable whose data type is LongTensor
-  words_var = convert_to_variable(words)
-  logits = model(words_var)
+def calc_score_of_history(history):
+  words_var = convert_to_variable(history)  # Convert list of words to variable
+  logits = model(words_var)  # Predict the logits for the next word
   return logits
 
 # Calculate the loss value for the entire sentence
 def calc_sent_loss(sent):
   # The initial history is equal to end of sentence symbols
   hist = [S] * N
-  # Step through the sentence, including the end of sentence token
-  all_histories = []
-  all_targets = []
+  total_loss = 0.0
   for next_word in sent + [S]:
-    all_histories.append(list(hist))
-    all_targets.append(next_word)
+    logits = calc_score_of_history(hist)
+    loss = nn.functional.cross_entropy(logits, convert_to_variable([next_word]), size_average=False)
+    total_loss += loss
     hist = hist[1:] + [next_word]
-
-  logits = calc_score_of_histories(all_histories)
-  loss = nn.functional.cross_entropy(logits, convert_to_variable(all_targets), size_average=False)
-
-  return loss
+  return total_loss
 
 MAX_LEN = 100
 # Generate a sentence
@@ -96,8 +90,8 @@ def generate_sent():
   hist = [S] * N
   sent = []
   while True:
-    logits = calc_score_of_histories([hist])
-    prob = nn.functional.softmax(logits)
+    logit = calc_score_of_history([hist])
+    prob = nn.functional.softmax(logit)
     next_word = prob.multinomial(num_samples=1).item()
     if next_word == S or len(sent) == MAX_LEN:
       break
@@ -115,14 +109,15 @@ for ITER in range(5):
   model.train()
   train_words, train_loss = 0, 0.0
   start = time.time()
-  for sent_id, sent in enumerate(train):
+  for sent_id, sent in tqdm(enumerate(train), total=len(train)):
     my_loss = calc_sent_loss(sent)
     train_loss += my_loss.item()
     train_words += len(sent)
     optimizer.zero_grad()
     my_loss.backward()
     optimizer.step()
-    if (sent_id+1) % 5000 == 0:
+    # if (sent_id+1) % 5000 == 0:
+    if (sent_id+1) % 500 == 0:
       print("--finished %r sentences (word/sec=%.2f)" % (sent_id+1, train_words/(time.time()-start)))
   print("iter %r: train loss/word=%.4f, ppl=%.4f (word/sec=%.2f)" % (ITER, train_loss/train_words, math.exp(train_loss/train_words), train_words/(time.time()-start)))
   
@@ -131,7 +126,7 @@ for ITER in range(5):
   model.eval()
   dev_words, dev_loss = 0, 0.0
   start = time.time()
-  for sent_id, sent in enumerate(dev):
+  for sent_id, sent in tqdm(enumerate(dev), total=len(dev)):
     my_loss = calc_sent_loss(sent)
     dev_loss += my_loss.item()
     dev_words += len(sent)
