@@ -57,6 +57,7 @@ model = FNN_LM(nwords=nwords, emb_size=EMB_SIZE, hid_size=HID_SIZE, num_hist=N, 
 if USE_CUDA:
   model = model.cuda()
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+loss_func = nn.functional.cross_entropy
 
 # convert a (nested) list of int into a pytorch Variable
 def convert_to_variable(words):
@@ -79,7 +80,7 @@ def calc_sent_loss(sent):
   total_loss = 0.0
   for next_word in sent + [S]:
     logits = calc_score_of_history(hist)
-    loss = nn.functional.cross_entropy(logits, convert_to_variable([next_word]), size_average=False)
+    loss = loss_func(logits, convert_to_variable([next_word]), size_average=False)
     total_loss += loss
     hist = hist[1:] + [next_word]
   return total_loss
