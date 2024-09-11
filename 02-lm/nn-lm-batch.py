@@ -21,9 +21,9 @@ class FNN_LM(nn.Module):
     )
 
   def forward(self, words):
-    emb = self.embedding(words)      # 3D Tensor of size [batch_size x num_hist x emb_size]
-    feat = emb.view(emb.size(0), -1) # 2D Tensor of size [batch_size x (num_hist*emb_size)]
-    logit = self.fnn(feat)           # 2D Tensor of size [batch_size x nwords]
+    emb = self.embedding(words)      # [batch_size x num_hist x emb_size]
+    feat = emb.view(emb.size(0), -1) # [batch_size x (num_hist x emb_size)]
+    logit = self.fnn(feat)           # [batch_size x nwords]
 
     return logit
 
