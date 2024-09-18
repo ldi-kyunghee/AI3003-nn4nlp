@@ -59,7 +59,7 @@ class RNNModel(nn.Module):
     def __init__(self, nwords, ntags, emb_size, hidden_size):
         super(RNNModel, self).__init__()
         self.embedding = nn.Embedding(nwords, emb_size)
-        self.rnn = nn.LSTM(emb_size, hidden_size, batch_first=True)
+        self.rnn = nn.RNN(emb_size, hidden_size, batch_first=True)
         self.fc = nn.Linear(hidden_size, ntags)
     
         # Initialize weights
