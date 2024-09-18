@@ -84,6 +84,7 @@ optimizer = optim.Adam(model.parameters(), lr=0.001)
 criterion = nn.CrossEntropyLoss()
 
 # Training loop
+max_test_accuracy = 0.0
 for ITER in range(100):
     # Perform training
     train_loss = 0.0
@@ -109,5 +110,10 @@ for ITER in range(100):
             logits = model(sentences)
             predict = torch.argmax(logits, dim=1)
             test_correct += (predict == tags).sum().item()
+
+    test_accuracy = test_correct / len(dev_data)
+    if max_test_accuracy < test_accuracy:
+        max_test_accuracy = test_accuracy
+    print(f"iter {ITER}: test acc={test_accuracy:.4f}")
     
-    print(f"iter {ITER}: test acc={test_correct / len(dev_data):.4f}")
+print("max test acc=%.4f" % (max_test_accuracy))
