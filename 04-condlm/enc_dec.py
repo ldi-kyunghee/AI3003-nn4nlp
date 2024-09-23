@@ -172,6 +172,7 @@ def evaluate(model, dev_loader):
     return total_loss / total_words
 
 # Training loop
+max_test_bleu = 0.0
 for epoch in range(100):
     train_loss = train_epoch(model, train_loader, optimizer)
     dev_loss = evaluate(model, dev_loader)
@@ -198,5 +199,10 @@ for epoch in range(100):
         # print(f"BLEU Score: {bleu_score:.4f}\n")
             
     # Average BLEU score across the test set
-    average_bleu = sum(bleu_scores) / len(bleu_scores)
-    print(f"Average BLEU Score: {average_bleu:.4f}")
+    test_bleu = sum(bleu_scores) / len(bleu_scores)
+
+    if max_test_bleu < test_bleu:
+        max_test_bleu = test_bleu
+    print(f"epoch {epoch}: test acc={test_bleu:.4f}")
+    
+print("max test bleu=%.4f" % (max_test_bleu))
