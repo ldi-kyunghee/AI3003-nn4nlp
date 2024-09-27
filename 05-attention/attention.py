@@ -246,7 +246,7 @@ def evaluate(model, dev_loader):
 # Training loop
 max_test_bleu = -0.1
 best_model = None
-for epoch in range(1):
+for epoch in range(100):
     train_loss = train_epoch(model, train_loader, optimizer)
     dev_loss = evaluate(model, dev_loader)
     print(f"Epoch {epoch}: Train Loss: {train_loss:.4f}, Dev Loss: {dev_loss:.4f}, Perplexity: {math.exp(dev_loss):.4f}")
