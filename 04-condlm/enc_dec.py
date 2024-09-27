@@ -162,7 +162,7 @@ def evaluate(model, dev_loader):
             outputs = outputs.view(-1, outputs.shape[-1])
 
             # Only count non-padding tokens
-            non_pad_elements = trg_output.ne(eos_trg).sum().item()
+            non_pad_elements = trg_output.ne(pad_trg).sum().item()
 
             loss = criterion(outputs, trg_output.contiguous().view(-1))
 
