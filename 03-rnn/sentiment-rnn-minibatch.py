@@ -92,7 +92,7 @@ for ITER in range(100):
     model.train()
 
     for sentences, tags in tqdm(train_loader):
-        logits = model(words)
+        logits = model(sentences)
         loss = criterion(logits, tags)
         train_loss += loss.item()
 
