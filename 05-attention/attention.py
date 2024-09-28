@@ -108,9 +108,9 @@ class Seq2SeqAttention(nn.Module):
         att_tgt = self.att_w1_tgt(tgt_vector).unsqueeze(1)
         att_combined = torch.tanh(att_src + att_tgt)
         attention_scores = self.att_w2(att_combined).squeeze(2)
-        alignment = torch.softmax(attention_scores, dim=1)
-        att_vector = torch.bmm(alignment.unsqueeze(1), src_vectors).squeeze(1)
-        return att_vector, alignment
+        attention_weights = torch.softmax(attention_scores, dim=1)
+        att_vector = torch.bmm(attention_weights.unsqueeze(1), src_vectors).squeeze(1)
+        return att_vector, attention_weights
 
     def forward(self, src, trg):
         embedded_src = self.embedding_src(src)
@@ -156,8 +156,8 @@ class Seq2SeqAttention(nn.Module):
             lstm_output, (hidden, cell) = self.decoder_lstm(tgt_input, (hidden, cell))
             
             # Calculate attention
-            att_output, alignment = self.calc_attention(src_outputs, lstm_output.squeeze(1))
-            attention_matrix.append(alignment)
+            att_output, attention_weights = self.calc_attention(src_outputs, lstm_output.squeeze(1))
+            attention_matrix.append(attention_weights)
             
             # Concatenate LSTM output and attention output
             concat_output = torch.cat([lstm_output.squeeze(1), att_output], dim=1)
