@@ -103,14 +103,14 @@ class Seq2SeqAttention(nn.Module):
         self.out_w = nn.Linear(hidden_size*2, hidden_size)
         self.out_sm = nn.Linear(hidden_size, nwords_trg)
 
-    def calc_attention(self, src_outputs, tgt_output):
-        att_src = self.att_w1_src(src_outputs)
-        att_tgt = self.att_w1_tgt(tgt_output).unsqueeze(1)
+    def calc_attention(self, src_vectors, tgt_vector):
+        att_src = self.att_w1_src(src_vectors)
+        att_tgt = self.att_w1_tgt(tgt_vector).unsqueeze(1)
         att_combined = torch.tanh(att_src + att_tgt)
         attention_scores = self.att_w2(att_combined).squeeze(2)
         alignment = torch.softmax(attention_scores, dim=1)
-        att_output = torch.bmm(alignment.unsqueeze(1), src_outputs).squeeze(1)
-        return att_output, alignment
+        att_vector = torch.bmm(alignment.unsqueeze(1), src_vectors).squeeze(1)
+        return att_vector, alignment
 
     def forward(self, src, trg):
         embedded_src = self.embedding_src(src)
