@@ -1,6 +1,6 @@
-#  NLP Data
+# AI3003-nn4nlp
+AI3003 Neural Networks for NLP at Kyung Hee University 
 
-## sst-sentiment-text-threeclass
+## Acknowledgement
 
-Textual data from the Stanford Sentiment Treebank: http://nlp.stanford.edu/sentiment/index.html
-The classes collapse the two positive and negative classes from the original treebank to a single class, so there are three classes: "positive" (1), "negative" (-1), and "neutral" (0).
+Part of this material is based on [anlp-code](https://github.com/neubig/anlp-code) from CMU, licensed under the Apache 2.0 License. I am grateful to Graham Neubig for making the original material publicly available.
