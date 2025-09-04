@@ -1,6 +1,6 @@
-# AI3003-nn4nlp
-AI3003 Neural Networks for NLP at Kyung Hee University 
+### Lecture 1: Introduction
 
-## Acknowledgement
+1. `rule_based_classifier.ipynb`: train a rule-based classifier for sentiment analysis
+2. `trained_bow_classifier.ipynb`: train a simple bag-of-words classifier using structured perceptron
 
-Part of this material is based on [anlp-code](https://github.com/neubig/anlp-code) from CMU, licensed under the Apache 2.0 License. I am grateful to Graham Neubig for making the original material publicly available.
+References: *These notebooks are from https://github.com/neubig/anlp-code* by Graham Neubig from CMU
